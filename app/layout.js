@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "wardLink NG",
-  description: "An offline first",
+  description: "Offline-first hospital ward handover & patient records system for Nigerian healthcare",
 };
 
 export default function RootLayout({ children }) {
