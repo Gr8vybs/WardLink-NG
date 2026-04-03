@@ -11,6 +11,16 @@
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   }
   
+  /* Hide scrollbar for filter buttons but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
   /* Dark glass for inputs */
   .glass-input {
     background: rgba(0, 0, 0, 0.3);

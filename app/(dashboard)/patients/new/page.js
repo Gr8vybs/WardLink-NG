@@ -1,132 +1,133 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ArrowLeft, UserPlus } from "lucide-react";
-import Link from "next/link";
-import { db } from "@/lib/offline/db";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, Save, UserPlus } from 'lucide-react';
+import { db } from '@/lib/offline/db';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function NewPatientPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    hospitalId: "",
-    dateOfBirth: "",
-    gender: "",
-    phone: "",
-    address: "",
-    allergies: "",
-    chronicConditions: "",
+    firstName: '',
+    lastName: '',
+    hospitalId: '',
+    dateOfBirth: '',
+    gender: '',
+    phone: '',
+    address: '',
+    allergies: '',
+    chronicConditions: ''
   });
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setError(""); // Clear error on change
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.firstName || !formData.lastName || !formData.dateOfBirth || !formData.gender) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
     setIsSubmitting(true);
-    setError("");
 
     try {
-      // Transform form data to patient object
-      const patient = {
-        id: db.generateId(),
-        hospitalId: formData.hospitalId || undefined,
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
+      const patientId = db.generateId();
+
+      // Parse comma-separated values into arrays
+      const allergies = formData.allergies
+        ? formData.allergies.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+      const chronicConditions = formData.chronicConditions
+        ? formData.chronicConditions.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+      await db.patients.add({
+        id: patientId,
+        hospitalId: formData.hospitalId || null,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         dateOfBirth: new Date(formData.dateOfBirth),
         gender: formData.gender,
-        phone: formData.phone.trim() || undefined,
-        address: formData.address.trim() || undefined,
-        allergies: formData.allergies
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        chronicConditions: formData.chronicConditions
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        phone: formData.phone || null,
+        address: formData.address || null,
+        allergies,
+        chronicConditions,
+        isDeleted: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        syncStatus: "pending", // Will sync to Supabase when online
-        isDeleted: false,
-      };
+        syncStatus: 'pending'
+      });
 
-      // Save to IndexedDB
-      await db.patients.add(patient);
-
-      console.log("✅ Patient saved:", patient.id);
-
-      // Redirect to patient list
-      router.push("/patients");
-
-    } catch (err) {
-      console.error("Failed to save patient:", err);
-      setError("Failed to save patient. Please try again.");
+      router.push('/patients');
+    } catch (error) {
+      console.error('Failed to create patient:', error);
+      alert('Failed to create patient. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      {/* Background gradient shapes */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
-      </div>
-
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/patients"
-          className="inline-flex items-center text-gray-400 hover:text-white mb-4 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Patients
+      <div className="flex items-center gap-4">
+        <Link href="/patients">
+          <Button variant="outline" size="sm" className="glass-input">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
         </Link>
-        <h1 className="text-3xl font-bold text-white">Add New Patient</h1>
-        <p className="text-gray-400 mt-1">Enter patient details for ward registration</p>
+        <div>
+          <h1 className="text-3xl font-bold text-white">New Patient</h1>
+          <p className="text-gray-400 mt-1">Register a new patient to the ward</p>
+        </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="max-w-2xl mx-auto mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
-          {error}
-        </div>
-      )}
-
-      {/* Glassmorphism Form Card */}
-      <Card className="glass max-w-2xl mx-auto">
-        <CardContent className="p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-purple-400" />
+              Personal Information
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              Required fields are marked with *
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
             {/* Name Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>First Name *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="firstName">
+                  First Name <span className="text-red-400">*</span>
+                </Label>
                 <Input
+                  id="firstName"
                   value={formData.firstName}
-                  onChange={(e) => handleChange("firstName", e.target.value)}
+                  onChange={(e) => handleChange('firstName', e.target.value)}
                   placeholder="Amina"
                   className="glass-input h-12"
                   required
                 />
               </div>
-              <div>
-                <Label>Last Name *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">
+                  Last Name <span className="text-red-400">*</span>
+                </Label>
                 <Input
+                  id="lastName"
                   value={formData.lastName}
-                  onChange={(e) => handleChange("lastName", e.target.value)}
+                  onChange={(e) => handleChange('lastName', e.target.value)}
                   placeholder="Abdullah"
                   className="glass-input h-12"
                   required
@@ -136,21 +137,25 @@ export default function NewPatientPage() {
 
             {/* Hospital ID & DOB */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Hospital ID</Label>
+              <div className="space-y-2">
+                <Label htmlFor="hospitalId">Hospital ID</Label>
                 <Input
+                  id="hospitalId"
                   value={formData.hospitalId}
-                  onChange={(e) => handleChange("hospitalId", e.target.value)}
+                  onChange={(e) => handleChange('hospitalId', e.target.value)}
                   placeholder="FH/2025/001"
                   className="glass-input h-12"
                 />
               </div>
-              <div>
-                <Label>Date of Birth *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">
+                  Date of Birth <span className="text-red-400">*</span>
+                </Label>
                 <Input
+                  id="dateOfBirth"
                   type="date"
                   value={formData.dateOfBirth}
-                  onChange={(e) => handleChange("dateOfBirth", e.target.value)}
+                  onChange={(e) => handleChange('dateOfBirth', e.target.value)}
                   className="glass-input h-12"
                   required
                 />
@@ -159,25 +164,30 @@ export default function NewPatientPage() {
 
             {/* Gender & Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Gender *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="gender">
+                  Gender <span className="text-red-400">*</span>
+                </Label>
                 <select
+                  id="gender"
                   value={formData.gender}
-                  onChange={(e) => handleChange("gender", e.target.value)}
-                  className="glass-input h-12 w-full rounded-md px-3"
+                  onChange={(e) => handleChange('gender', e.target.value)}
+                  className="flex h-12 w-full rounded-md glass-input px-3 py-2 text-sm bg-transparent text-white"
                   required
                 >
-                  <option value="" className="bg-gray-900">Select gender</option>
-                  <option value="female" className="bg-gray-900">Female</option>
-                  <option value="male" className="bg-gray-900">Male</option>
-                  <option value="other" className="bg-gray-900">Other</option>
+                  <option value="" className="bg-[#1a1a2e]">Select gender</option>
+                  <option value="male" className="bg-[#1a1a2e]">Male</option>
+                  <option value="female" className="bg-[#1a1a2e]">Female</option>
+                  <option value="other" className="bg-[#1a1a2e]">Other</option>
                 </select>
               </div>
-              <div>
-                <Label>Phone Number</Label>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
                 <Input
+                  id="phone"
+                  type="tel"
                   value={formData.phone}
-                  onChange={(e) => handleChange("phone", e.target.value)}
+                  onChange={(e) => handleChange('phone', e.target.value)}
                   placeholder="+2348012345678"
                   className="glass-input h-12"
                 />
@@ -185,11 +195,12 @@ export default function NewPatientPage() {
             </div>
 
             {/* Address */}
-            <div>
-              <Label>Address</Label>
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
               <Input
+                id="address"
                 value={formData.address}
-                onChange={(e) => handleChange("address", e.target.value)}
+                onChange={(e) => handleChange('address', e.target.value)}
                 placeholder="12 Hospital Road, Ibadan"
                 className="glass-input h-12"
               />
@@ -197,41 +208,48 @@ export default function NewPatientPage() {
 
             {/* Medical Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Allergies (comma-separated)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="allergies">Allergies (comma-separated)</Label>
                 <Input
+                  id="allergies"
                   value={formData.allergies}
-                  onChange={(e) => handleChange("allergies", e.target.value)}
+                  onChange={(e) => handleChange('allergies', e.target.value)}
                   placeholder="Penicillin, Sulfa drugs"
                   className="glass-input h-12"
                 />
               </div>
-              <div>
-                <Label>Chronic Conditions</Label>
+              <div className="space-y-2">
+                <Label htmlFor="chronicConditions">Chronic Conditions</Label>
                 <Input
+                  id="chronicConditions"
                   value={formData.chronicConditions}
-                  onChange={(e) => handleChange("chronicConditions", e.target.value)}
+                  onChange={(e) => handleChange('chronicConditions', e.target.value)}
                   placeholder="Hypertension, Diabetes"
                   className="glass-input h-12"
                 />
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Submit Button */}
-            <div className="pt-4">
-              <Button
-                type="submit"
-                isLoading={isSubmitting}
-                className="btn-glass w-full h-12 text-lg font-semibold"
-              >
-                <UserPlus className="w-5 h-5 mr-2" />
-                {isSubmitting ? "Saving..." : "Register Patient"}
-              </Button>
-            </div>
-
-          </form>
-        </CardContent>
-      </Card>
+        {/* Submit Button */}
+        <div className="flex items-center justify-end gap-4">
+          <Link href="/patients">
+            <Button type="button" variant="outline" className="glass-input">
+              Cancel
+            </Button>
+          </Link>
+          <Button
+            type="submit"
+            className="btn-glass"
+            disabled={isSubmitting}
+            isLoading={isSubmitting}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isSubmitting ? 'Saving...' : 'Save Patient'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
