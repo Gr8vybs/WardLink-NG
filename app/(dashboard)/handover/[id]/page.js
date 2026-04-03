@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   ClipboardList,
   CheckSquare,
-  Square
+  Square,
+    Plus
 } from 'lucide-react';
 import { db } from '@/lib/offline/db';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
