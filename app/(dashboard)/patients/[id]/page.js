@@ -150,12 +150,14 @@ export default function PatientDetailPage() {
 
             {/* Right: Actions */}
             <div className="flex flex-col gap-2">
-              <Link href={`/patients/${patientId}/handoff`}>
-                <Button className="btn-glass w-full md:w-auto">
-                  <FileText className="w-4 h-4 mr-2" />
+
+              <Link href={`/handover/new?patientId=${patientId}`}>
+                <Button size="sm" className="btn-glass">
+                  <Plus className="w-4 h-4 mr-1" />
                   New Handoff
                 </Button>
               </Link>
+
               <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-white/5">
                 Edit Patient
               </Button>
