@@ -1,6 +1,15 @@
 'use client';
 
+import {
+  exportPatientsToJSON,
+  exportPatientsToCSV,
+  exportFullReportToPDF,
+  exportFullReportToExcel,
+  importFromJSON
+} from '@/lib/utils/export';
+
 import { useState, useEffect } from 'react';
+
 import {
   Download,
   Upload,
@@ -9,9 +18,9 @@ import {
   AlertTriangle,
   CheckCircle2
 } from 'lucide-react';
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { exportPatientsToJSON, exportPatientsToCSV, importFromJSON } from '@/lib/utils/export';
 import { db } from '@/lib/offline/db';
 import { cn } from '@/lib/utils/cn';
 
@@ -19,6 +28,7 @@ export default function SettingsPage() {
   const [importStatus, setImportStatus] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
   const [storageInfo, setStorageInfo] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     checkStorage();
@@ -71,36 +81,74 @@ export default function SettingsPage() {
       <h1 className="text-2xl md:text-3xl font-bold text-white mb-6">Settings</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl">
-        {/* Data Export */}
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Download className="w-5 h-5 text-purple-400" />
-              Export Data
-            </CardTitle>
-            <CardDescription className="text-gray-400">
-              Backup your patient records
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              onClick={exportPatientsToJSON}
-              className="w-full btn-glass justify-start"
-              variant="outline"
-            >
-              <Database className="w-4 h-4 mr-2" />
-              Export Full Backup (JSON)
-            </Button>
-            <Button
-              onClick={exportPatientsToCSV}
-              className="w-full glass-input justify-start"
-              variant="outline"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Patients (CSV)
-            </Button>
-          </CardContent>
-        </Card>
+
+{/* Data Export */}
+<Card className="glass">
+  <CardHeader>
+    <CardTitle className="text-white flex items-center gap-2">
+      <Download className="w-5 h-5 text-purple-400" />
+      Export Data
+    </CardTitle>
+    <CardDescription className="text-gray-400">
+      Backup your patient records, handoffs and tasks
+    </CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    <Button
+      onClick={exportPatientsToJSON}
+      className="w-full btn-glass justify-start"
+      variant="outline"
+      disabled={isExporting}
+    >
+      <Database className="w-4 h-4 mr-2" />
+      {isExporting ? 'Exporting...' : 'Export Full Backup (JSON)'}
+    </Button>
+
+    <Button
+      onClick={exportPatientsToCSV}
+      className="w-full glass-input justify-start"
+      variant="outline"
+      disabled={isExporting}
+    >
+      <Download className="w-4 h-4 mr-2" />
+      {isExporting ? 'Exporting...' : 'Export Patients Only (CSV)'}
+    </Button>
+
+    <Button
+      onClick={async () => {
+        setIsExporting(true);
+        try {
+          await exportFullReportToPDF();
+        } finally {
+          setIsExporting(false);
+        }
+      }}
+      className="w-full glass-input justify-start"
+      variant="outline"
+      disabled={isExporting}
+    >
+      <Download className="w-4 h-4 mr-2" />
+      {isExporting ? 'Exporting PDF...' : 'Export Full Report (PDF)'}
+    </Button>
+
+    <Button
+      onClick={async () => {
+        setIsExporting(true);
+        try {
+          await exportFullReportToExcel();
+        } finally {
+          setIsExporting(false);
+        }
+      }}
+      className="w-full glass-input justify-start"
+      variant="outline"
+      disabled={isExporting}
+    >
+      <Download className="w-4 h-4 mr-2" />
+      {isExporting ? 'Exporting Excel...' : 'Export Full Report (Excel)'}
+    </Button>
+  </CardContent>
+</Card>
 
         {/* Data Import */}
         <Card className="glass">
@@ -126,12 +174,9 @@ export default function SettingsPage() {
                 className="w-full glass-input justify-start cursor-pointer"
                 variant="outline"
                 disabled={isImporting}
-                asChild
               >
-                <span>
-                  <Upload className="w-4 h-4 mr-2" />
-                  {isImporting ? 'Importing...' : 'Select Backup File'}
-                </span>
+                <Upload className="w-4 h-4 mr-2" />
+                {isImporting ? 'Importing...' : 'Select Backup File'}
               </Button>
             </label>
 
